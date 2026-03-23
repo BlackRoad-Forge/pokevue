@@ -18,9 +18,13 @@ export default class WorldScene extends Phaser.Scene {
     let isGirl = Math.floor(Math.random() * 2) === 1
     this.load.spritesheet('player', require('../assets/sprites/player_18x22' + (isGirl ? '_girl' : '') + '.png'), { frameWidth: 18, frameHeight: 22 })
     this.load.spritesheet('alexa_npc', require('../assets/sprites/alexa_npc_18x22.png'), { frameWidth: 18, frameHeight: 22 })
-    // Agent sprites — use both male and female variants
-    this.load.spritesheet('agent_m', require('../assets/sprites/player_18x22.png'), { frameWidth: 18, frameHeight: 22 })
-    this.load.spritesheet('agent_f', require('../assets/sprites/player_18x22_girl.png'), { frameWidth: 18, frameHeight: 22 })
+    // Agent sprites — each unique key, mix of boy/girl/professor for variety
+    this.load.spritesheet('sprite_alice', require('../assets/sprites/player_18x22_girl.png'), { frameWidth: 18, frameHeight: 22 })
+    this.load.spritesheet('sprite_cecilia', require('../assets/sprites/prof_chen_18x22.png'), { frameWidth: 18, frameHeight: 22 })
+    this.load.spritesheet('sprite_octavia', require('../assets/sprites/player_18x22.png'), { frameWidth: 18, frameHeight: 22 })
+    this.load.spritesheet('sprite_lucidia', require('../assets/sprites/player_18x22_girl.png'), { frameWidth: 18, frameHeight: 22 })
+    this.load.spritesheet('sprite_aria', require('../assets/sprites/player_18x22.png'), { frameWidth: 18, frameHeight: 22 })
+    this.load.spritesheet('sprite_gematria', require('../assets/sprites/prof_chen_18x22.png'), { frameWidth: 18, frameHeight: 22 })
   }
 
   create () {
@@ -69,12 +73,12 @@ export default class WorldScene extends Phaser.Scene {
 
     // Spawn fleet agents from map Objects layer
     const agentConfig = {
-      'Alice':    { sprite: 'agent_f', tint: 0x4488FF },
-      'Cecilia':  { sprite: 'agent_f', tint: 0xFF6B2B },
-      'Octavia':  { sprite: 'agent_f', tint: 0x22cc66 },
-      'Lucidia':  { sprite: 'agent_f', tint: 0x8844FF },
-      'Aria':     { sprite: 'agent_f', tint: 0xFFD700 },
-      'Gematria': { sprite: 'agent_m', tint: 0xFF2255 },
+      'Alice':    { sprite: 'sprite_alice',    tint: 0x4488FF },
+      'Cecilia':  { sprite: 'sprite_cecilia',  tint: 0xFF6B2B },
+      'Octavia':  { sprite: 'sprite_octavia',  tint: 0x22cc66 },
+      'Lucidia':  { sprite: 'sprite_lucidia',  tint: 0x8844FF },
+      'Aria':     { sprite: 'sprite_aria',     tint: 0xFFD700 },
+      'Gematria': { sprite: 'sprite_gematria', tint: 0xFF2255 },
     }
 
     this.agents = []
@@ -83,7 +87,7 @@ export default class WorldScene extends Phaser.Scene {
       if (point) {
         const cfg = agentConfig[name]
         const agent = new MovableCharacter(this, point.x, point.y, cfg.sprite)
-        agent.setTint(cfg.tint)
+        // No tint — let them look natural like the player
         agent.agentName = name
         this.agents.push(agent)
         console.log('Spawned', name, 'at', point.x, point.y)
@@ -239,11 +243,15 @@ export default class WorldScene extends Phaser.Scene {
 
     this.alexaNpc.updateCaseOccupation()
 
-    // Agents wander autonomously
+    // Agents wander autonomously — need to call continueMoving too
     if (this.agents) {
       this.agents.forEach(agent => {
-        agent.wanderRandomly()
-        agent.updateCaseOccupation()
+        if (agent.isMoving) {
+          agent.continueMoving()
+        } else {
+          agent.wanderRandomly()
+        }
+        try { agent.updateCaseOccupation() } catch (e) {}
       })
     }
 

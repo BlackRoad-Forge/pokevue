@@ -271,10 +271,18 @@ export default class MovableCharacter extends Phaser.Physics.Arcade.Sprite {
 
   // Autonomous wandering for NPC agents
   wanderRandomly () {
-    if (this.isMoving || this.isMovingAutomatically || !this.isFullyOnTile()) return
+    if (this.isMoving || this.isMovingAutomatically) return
+    if (!this.isFullyOnTile()) {
+      // Force align to grid if stuck between tiles
+      this.x = Math.round((this.x - 8) / 16) * 16 + 8
+      this.y = Math.round((this.y - 8) / 16) * 16 + 8
+      this.isMoving = false
+      this.steps = 0
+      return
+    }
 
-    // Random chance to wander each frame
-    if (Math.random() > 0.005) return
+    // Wander ~2% of frames = moves every ~3 seconds at 60fps
+    if (Math.random() > 0.02) return
 
     const directions = ['left', 'right', 'up', 'down']
     const dir = directions[Math.floor(Math.random() * directions.length)]
