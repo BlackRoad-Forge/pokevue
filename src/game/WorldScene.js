@@ -18,6 +18,9 @@ export default class WorldScene extends Phaser.Scene {
     let isGirl = Math.floor(Math.random() * 2) === 1
     this.load.spritesheet('player', require('../assets/sprites/player_18x22' + (isGirl ? '_girl' : '') + '.png'), { frameWidth: 18, frameHeight: 22 })
     this.load.spritesheet('alexa_npc', require('../assets/sprites/alexa_npc_18x22.png'), { frameWidth: 18, frameHeight: 22 })
+    // Agent sprites — use both male and female variants
+    this.load.spritesheet('agent_m', require('../assets/sprites/player_18x22.png'), { frameWidth: 18, frameHeight: 22 })
+    this.load.spritesheet('agent_f', require('../assets/sprites/player_18x22_girl.png'), { frameWidth: 18, frameHeight: 22 })
   }
 
   create () {
@@ -60,9 +63,34 @@ export default class WorldScene extends Phaser.Scene {
     this.physics.world.bounds.width = map.widthInPixels
     this.physics.world.bounds.height = map.heightInPixels
 
-    // Spawn PNJs
+    // Spawn Alexa (founder NPC)
     const alexaNpcSpawnPoint = map.findObject('Objects', obj => obj.name === 'Alexa')
     this.alexaNpc = new MovableCharacter(this, alexaNpcSpawnPoint.x, alexaNpcSpawnPoint.y, 'alexa_npc')
+
+    // Spawn fleet agents from map Objects layer
+    const agentConfig = {
+      'Alice':    { sprite: 'agent_f', tint: 0x4488FF },
+      'Cecilia':  { sprite: 'agent_f', tint: 0xFF6B2B },
+      'Octavia':  { sprite: 'agent_f', tint: 0x22cc66 },
+      'Lucidia':  { sprite: 'agent_f', tint: 0x8844FF },
+      'Aria':     { sprite: 'agent_f', tint: 0xFFD700 },
+      'Gematria': { sprite: 'agent_m', tint: 0xFF2255 },
+    }
+
+    this.agents = []
+    Object.keys(agentConfig).forEach(name => {
+      const point = map.findObject('Objects', obj => obj.name === name)
+      if (point) {
+        const cfg = agentConfig[name]
+        const agent = new MovableCharacter(this, point.x, point.y, cfg.sprite)
+        agent.setTint(cfg.tint)
+        agent.agentName = name
+        this.agents.push(agent)
+        console.log('Spawned', name, 'at', point.x, point.y)
+      } else {
+        console.warn('No spawn point for', name)
+      }
+    })
 
     camera.startFollow(this.player)
     camera.roundPixels = true
@@ -210,6 +238,14 @@ export default class WorldScene extends Phaser.Scene {
     }
 
     this.alexaNpc.updateCaseOccupation()
+
+    // Agents wander autonomously
+    if (this.agents) {
+      this.agents.forEach(agent => {
+        agent.wanderRandomly()
+        agent.updateCaseOccupation()
+      })
+    }
 
     let nextTile = this.player.getNextTile()
     if (!nextTile.isOccupied && store.state.player.state.isInDialog) {

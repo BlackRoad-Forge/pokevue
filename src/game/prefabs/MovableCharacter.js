@@ -269,6 +269,27 @@ export default class MovableCharacter extends Phaser.Physics.Arcade.Sprite {
     })
   }
 
+  // Autonomous wandering for NPC agents
+  wanderRandomly () {
+    if (this.isMoving || this.isMovingAutomatically || !this.isFullyOnTile()) return
+
+    // Random chance to wander each frame
+    if (Math.random() > 0.005) return
+
+    const directions = ['left', 'right', 'up', 'down']
+    const dir = directions[Math.floor(Math.random() * directions.length)]
+    const next = this.getNextPosition(dir)
+
+    try {
+      const nextTile = this.scene.map.getTileAtWorldXY(next.x, next.y)
+      if (nextTile && !nextTile.collides && !nextTile.isOccupied) {
+        this.moveTo(dir)
+      }
+    } catch (e) {
+      // Out of bounds, ignore
+    }
+  }
+
   updateCaseOccupation () {
     this.scene.map.getTileAtWorldXY(this.x, this.y).isOccupied = true
     this.scene.map.getTileAtWorldXY(this.x, this.y).isOccupiedBy = this

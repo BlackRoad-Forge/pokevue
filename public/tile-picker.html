@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Tile Picker — Find the right tiles</title>
+<style>
+body{background:#1a1a1a;color:#e5e5e5;font-family:monospace;margin:10px}
+canvas{image-rendering:pixelated;border:1px solid #333;cursor:crosshair}
+#info{position:fixed;top:10px;right:10px;background:#222;padding:10px;border:1px solid #333;font-size:12px}
+#preview{image-rendering:pixelated;border:2px solid #FF2255;margin-top:5px}
+h1{color:#FF2255;font-size:16px}
+input{background:#111;border:1px solid #333;color:#e5e5e5;padding:4px;width:60px;font-family:monospace}
+</style>
+</head>
+<body>
+<h1>Tile Picker — Click tiles to get their IDs</h1>
+<div>Jump to row: <input id="rowInput" type="number" value="0" min="0"> <button onclick="jumpToRow()">Go</button>
+ | Zoom: <button onclick="setZoom(2)">2x</button> <button onclick="setZoom(3)">3x</button> <button onclick="setZoom(4)">4x</button>
+ | <span id="picked" style="color:#22cc66">Click a tile...</span></div>
+<br>
+<canvas id="c"></canvas>
+<div id="info">
+  <div>Tile ID: <span id="tileId">-</span></div>
+  <div>Col: <span id="tileCol">-</span> Row: <span id="tileRow">-</span></div>
+  <canvas id="preview" width="64" height="64"></canvas>
+  <div style="margin-top:8px;font-size:10px;color:#888">
+    <div id="history"></div>
+  </div>
+</div>
+<script>
+const img = new Image();
+img.src = '../src/assets/tilesets/pokemon_tileset___fire_red_leaf_green___outdoors_c_by_ozotwo-d7dmotm.png';
+const C = document.getElementById('c');
+const X = C.getContext('2d');
+const PC = document.getElementById('preview');
+const PX = PC.getContext('2d');
+let zoom = 3;
+let COLS = 8;
+let TILE = 16;
+let picked = [];
+
+img.onload = () => {
+  draw();
+};
+
+function draw() {
+  C.width = COLS * TILE * zoom;
+  C.height = img.height * zoom;
+  X.imageSmoothingEnabled = false;
+  X.drawImage(img, 0, 0, C.width, C.height);
+  
+  // Grid lines
+  X.strokeStyle = '#ffffff22';
+  X.lineWidth = 0.5;
+  for (let x = 0; x <= COLS; x++) {
+    X.beginPath(); X.moveTo(x*TILE*zoom, 0); X.lineTo(x*TILE*zoom, C.height); X.stroke();
+  }
+  for (let y = 0; y <= img.height/TILE; y++) {
+    X.beginPath(); X.moveTo(0, y*TILE*zoom); X.lineTo(C.width, y*TILE*zoom); X.stroke();
+  }
+}
+
+function setZoom(z) { zoom = z; draw(); }
+function jumpToRow() {
+  const row = parseInt(document.getElementById('rowInput').value);
+  window.scrollTo(0, row * TILE * zoom);
+}
+
+C.addEventListener('click', e => {
+  const rect = C.getBoundingClientRect();
+  const x = e.clientX - rect.left;
+  const y = e.clientY - rect.top;
+  const col = Math.floor(x / (TILE * zoom));
+  const row = Math.floor(y / (TILE * zoom));
+  const tileId = row * COLS + col + 1;
+  
+  document.getElementById('tileId').textContent = tileId;
+  document.getElementById('tileCol').textContent = col;
+  document.getElementById('tileRow').textContent = row;
+  document.getElementById('picked').textContent = 'Last picked: ' + tileId;
+  
+  // Preview
+  PX.imageSmoothingEnabled = false;
+  PX.clearRect(0, 0, 64, 64);
+  PX.drawImage(img, col*TILE, row*TILE, TILE, TILE, 0, 0, 64, 64);
+  
+  // History
+  picked.push({id: tileId, col, row});
+  if (picked.length > 10) picked.shift();
+  document.getElementById('history').innerHTML = picked.map(p => 
+    '<div>Tile ' + p.id + ' [' + p.col + ',' + p.row + ']</div>'
+  ).join('');
+});
+</script>
+</body>
+</html>
